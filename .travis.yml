@@ -1,9 +1,12 @@
 language:
   - cpp
 
+compiler:
+  - gcc
+
 install:
-  - cd src
-  - g++ -std=c++11 memory.cc -o a.out
+  - cd src &&
+  - g++ memory.cc
 
 script:
   - ./a.out
