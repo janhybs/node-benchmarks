@@ -3,7 +3,7 @@ language:
 
 install:
   - cd src
-  - g++ -std=c++11 memory.cc
+  - g++ -std=c++11 memory.cc -o a.out
 
 script:
   - ./a.out
