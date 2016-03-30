@@ -88,8 +88,10 @@ map<int, long> cpu_test_read_write(int (&arr)[M], int (&sizes)[N], int repetitio
         //-------------------------------------------------------
         start = std::chrono::high_resolution_clock::now();
             for (j = 0; j < repetition; j++) {
-                sum += arr[(j * OFFSET) & mod];
                 arr[(j * OFFSET) & mod] = 1;
+            }
+            for (j = 0; j < repetition; j++) {
+                sum += arr[(j * OFFSET) & mod];
             }
         end = std::chrono::high_resolution_clock::now();
         //-------------------------------------------------------
