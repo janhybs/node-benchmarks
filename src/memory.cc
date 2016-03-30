@@ -81,14 +81,15 @@ map<int, long> cpu_test_read_write(int (&arr)[M], int (&sizes)[N], int repetitio
 
     chrono::high_resolution_clock::time_point start, end;
     std::chrono::duration<double, std::micro> duration;
-    int i, j, mod;
+    int i, j, mod, sum;
     const int i_max = sizeof(sizes)/sizeof(int);
     for (i = 0; i < i_max; i++) {
         mod = sizes[i] - 1;
         //-------------------------------------------------------
         start = std::chrono::high_resolution_clock::now();
             for (j = 0; j < repetition; j++) {
-                arr[(j * OFFSET) & mod] += 1;
+                sum += arr[(j * OFFSET) & mod];
+                arr[(j * OFFSET) & mod] = 0;
             }
         end = std::chrono::high_resolution_clock::now();
         //-------------------------------------------------------
@@ -96,7 +97,7 @@ map<int, long> cpu_test_read_write(int (&arr)[M], int (&sizes)[N], int repetitio
         results[sizes[i]] = duration.count();
         print_result_debug(sizes[i], results[sizes[i]]);
     }
-    cout << "\rCPU r/w test ended                                 \n";
+    cout << "\rCPU r/w test ended                                 \n" << sum << endl;
     
     return results;
 }
