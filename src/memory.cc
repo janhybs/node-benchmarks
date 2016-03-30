@@ -69,7 +69,7 @@ map<int, long> cpu_test_read(int (&arr)[M], int (&sizes)[N], int repetition = RE
         results[sizes[i]] = duration.count();
         print_result_debug(sizes[i], results[sizes[i]]);
     }
-    cout << "\rCPU read test ended                                 \n" << sum << endl;
+    cout << "\rCPU read test ended                                 " << sum << endl;
     
     return results;
 }
@@ -97,7 +97,7 @@ map<int, long> cpu_test_read_write(int (&arr)[M], int (&sizes)[N], int repetitio
         results[sizes[i]] = duration.count();
         print_result_debug(sizes[i], results[sizes[i]]);
     }
-    cout << "\rCPU r/w test ended                                 \n" << sum << endl;
+    cout << "\rCPU r/w test ended                                 " << sum << endl;
     
     return results;
 }
