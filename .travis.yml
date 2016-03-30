@@ -12,7 +12,7 @@ install:
   - sudo apt-get install -qq g++-4.8
   - export CXX="g++-4.8"
   - cd src
-  - g++ -std=c++11 memory.cc
+  - g++-4.8 -std=c++11 memory.cc
 
 script:
   - ./a.out
