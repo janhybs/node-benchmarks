@@ -33,7 +33,9 @@ map<int, long> cpu_test_write(int (&arr)[M], int (&sizes)[N], int repetition = R
         mod = sizes[i] - 1;
         //-------------------------------------------------------
         start = std::chrono::high_resolution_clock::now();
-            for (j = 0; j < repetition; j++) arr[(j * OFFSET) & mod] = 0;
+            for (j = 0; j < repetition; j++) {
+                arr[(j * OFFSET) & mod] = 0;
+            }
         end = std::chrono::high_resolution_clock::now();
         //-------------------------------------------------------
         duration = std::chrono::duration_cast<chrono::nanoseconds>(end - start);
@@ -58,15 +60,16 @@ map<int, long> cpu_test_read(int (&arr)[M], int (&sizes)[N], int repetition = RE
         mod = sizes[i] - 1;
         //-------------------------------------------------------
         start = std::chrono::high_resolution_clock::now();
-            for (j = 0; j < repetition; j++) sum += arr[(j * OFFSET) & mod];
+            for (j = 0; j < repetition; j++)  {
+                sum += arr[(j * OFFSET) & mod];
+            }
         end = std::chrono::high_resolution_clock::now();
         //-------------------------------------------------------
         duration = std::chrono::duration_cast<chrono::nanoseconds>(end - start);
         results[sizes[i]] = duration.count();
-        results[1] = sum;
         print_result_debug(sizes[i], results[sizes[i]]);
     }
-    cout << "\rCPU read test ended                                 \n";
+    cout << "\rCPU read test ended                                 \n" << sum << endl;
     
     return results;
 }
@@ -84,7 +87,9 @@ map<int, long> cpu_test_read_write(int (&arr)[M], int (&sizes)[N], int repetitio
         mod = sizes[i] - 1;
         //-------------------------------------------------------
         start = std::chrono::high_resolution_clock::now();
-            for (j = 0; j < repetition; j++) arr[(j * OFFSET) & mod] += arr[(j * OFFSET) & mod];
+            for (j = 0; j < repetition; j++) {
+                arr[(j * OFFSET) & mod] += 1;
+            }
         end = std::chrono::high_resolution_clock::now();
         //-------------------------------------------------------
         duration = std::chrono::duration_cast<chrono::nanoseconds>(end - start);
