@@ -8,7 +8,8 @@
 
 #define KB  1024
 #define MB  1024 * 1024
-#define REP 1000*1000*10
+#define REP 1000 * 1000 * 10
+#define OFFSET 128
 
 using namespace std;
 
@@ -32,7 +33,7 @@ map<int, long> cpu_test_write(int (&arr)[M], int (&sizes)[N], int repetition = R
         mod = sizes[i] - 1;
         //-------------------------------------------------------
         start = std::chrono::high_resolution_clock::now();
-            for (j = 0; j < repetition; j++) arr[(j * 128) & mod] = 8;
+            for (j = 0; j < repetition; j++) arr[(j * OFFSET) & mod] = 0;
         end = std::chrono::high_resolution_clock::now();
         //-------------------------------------------------------
         duration = std::chrono::duration_cast<chrono::nanoseconds>(end - start);
@@ -57,11 +58,12 @@ map<int, long> cpu_test_read(int (&arr)[M], int (&sizes)[N], int repetition = RE
         mod = sizes[i] - 1;
         //-------------------------------------------------------
         start = std::chrono::high_resolution_clock::now();
-            for (j = 0; j < repetition; j++) sum += arr[(j * 128) & mod];
+            for (j = 0; j < repetition; j++) sum += arr[(j * OFFSET) & mod];
         end = std::chrono::high_resolution_clock::now();
         //-------------------------------------------------------
         duration = std::chrono::duration_cast<chrono::nanoseconds>(end - start);
         results[sizes[i]] = duration.count();
+        results[1] = sum;
         print_result_debug(sizes[i], results[sizes[i]]);
     }
     cout << "\rCPU read test ended                                 \n";
@@ -82,7 +84,7 @@ map<int, long> cpu_test_read_write(int (&arr)[M], int (&sizes)[N], int repetitio
         mod = sizes[i] - 1;
         //-------------------------------------------------------
         start = std::chrono::high_resolution_clock::now();
-            for (j = 0; j < repetition; j++) arr[(j * 128) & mod] += arr[(j * 128) & mod];
+            for (j = 0; j < repetition; j++) arr[(j * OFFSET) & mod] += arr[(j * OFFSET) & mod];
         end = std::chrono::high_resolution_clock::now();
         //-------------------------------------------------------
         duration = std::chrono::duration_cast<chrono::nanoseconds>(end - start);
@@ -104,13 +106,17 @@ int main() {
         1 * KB, 2 * KB, 4 * KB, 8 * KB, 16 * KB, 32 * KB, 64 * KB, 128 * KB,
         256 * KB, 512 * KB, 1 * MB, 2 * MB, 4 * MB, 8 * MB, 16 * MB, 32 * MB
     };
-
-    results_read = cpu_test_read(arr, sizes);
-    // for(auto elem : results_read)
-    //     print_result(elem.first, elem.second);
+    
+    for (int i = 0; i < sizeof(arr)/sizeof(int); i++) {
+        arr[i] = rand();
+    }
+    
     results_write = cpu_test_write(arr, sizes);
     // for(auto elem : results_write)
     //     print_result(elem.first, elem.second); 
+    results_read = cpu_test_read(arr, sizes);
+    // for(auto elem : results_read)
+    //     print_result(elem.first, elem.second);
     results_rw = cpu_test_read_write(arr, sizes);
     // for(auto elem : results_rw)
     //     print_result(elem.first, elem.second);
