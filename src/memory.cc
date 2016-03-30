@@ -117,12 +117,12 @@ int main() {
         arr[i] = rand();
     }
     
-    results_write = cpu_test_write(arr, sizes);
-    // for(auto elem : results_write)
-    //     print_result(elem.first, elem.second); 
     results_read = cpu_test_read(arr, sizes);
     // for(auto elem : results_read)
     //     print_result(elem.first, elem.second);
+    results_write = cpu_test_write(arr, sizes);
+    // for(auto elem : results_write)
+    //     print_result(elem.first, elem.second); 
     results_rw = cpu_test_read_write(arr, sizes);
     // for(auto elem : results_rw)
     //     print_result(elem.first, elem.second);
@@ -130,7 +130,7 @@ int main() {
     printf("%5s\t%5s\t%5s\t%5s\n", "size","read", "write", "r/w");
     
     for(int i = 0; i < sizeof(sizes)/sizeof(int); i++) {
-        printf("%d\t%1.3f\t%1.3f\t%1.3f\n", sizes[i]/1024, 
+        printf("%d\t%1.3f\t%1.3f\t%1.3f\n", (int)((sizes[i]/1024)*sizeof(int)), 
         results_read[sizes[i]]/1000.0,
         results_write[sizes[i]]/1000.0,
         results_rw[sizes[i]]/1000.0);
