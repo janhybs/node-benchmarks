@@ -1,0 +1,9 @@
+language:
+  - cpp
+
+install:
+  - cd src
+  - g++ -std=c++11 memory.cc
+
+script:
+  - ./a.out
