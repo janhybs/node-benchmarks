@@ -5,6 +5,7 @@
 #include <chrono>
 #include <iostream>
 #include <fstream>
+#include <stdarg.h>
 #include "libs/json.hpp"
 
 #define KB  1024
@@ -16,12 +17,14 @@
 using namespace std;
 using json = nlohmann::json;
 
-void print_result_debug(int size, long time) {
-    printf("\rsize of %5d kB, ended with %10.3f ms", size/1024, time/1000.0);
+void printf_debug(const char * fmt, ...) {
+    string newfmt = string(fmt) + "\r";
+    const char * newfmt_c = newfmt.c_str();
+    va_list args;
+    va_start(args, fmt);
+    vprintf(newfmt_c, args);
+    va_end(args);
     cout << flush;
-}
-void print_result(int size, long time) {
-    printf("%5d, %10.3f\n", size/1024, time/1000.0);
 }
 
 void cpu_test(json &results, int repetition = REP) {
@@ -38,6 +41,7 @@ void cpu_test(json &results, int repetition = REP) {
     duration = chrono::duration_cast<chrono::microseconds>(end - start);
     results["duration"] = duration.count();
     results["reps"] = repetition;
+    printf("cpu   : fin             \n");
 }
 
 
@@ -58,10 +62,12 @@ void cpu_test_r(json &results, int (&arr)[M], int (&sizes)[N], int repetition = 
         //-------------------------------------------------------
         duration = chrono::duration_cast<chrono::microseconds>(end - start);
         results["duration"][to_string(sizes[i]/1024*sizeof(int))] = duration.count();
+        printf_debug("cpu r:  %d -> %d", sizes[i]/1024*sizeof(int), duration.count());
     }
     results["reps"] = repetition;
     results["size"] = sizeof(arr)/sizeof(int);
     results["sum"] = sum;
+    printf("cpu r : fin             \n");
 }
 
 
@@ -82,9 +88,11 @@ void cpu_test_w(json &results, int (&arr)[M], int (&sizes)[N], int repetition = 
         //-------------------------------------------------------
         duration = chrono::duration_cast<chrono::microseconds>(end - start);
         results["duration"][to_string(sizes[i]/1024*sizeof(int))] = duration.count();
+        printf_debug("cpu w:  %d -> %d", sizes[i]/1024*sizeof(int), duration.count());
     }
     results["reps"] = repetition;
     results["size"] = sizeof(arr)/sizeof(int);
+    printf("cpu w : fin             \n");
 }
 
 
@@ -99,17 +107,18 @@ void cpu_test_rw(json &results, int (&arr)[M], int (&sizes)[N], int repetition =
         //-------------------------------------------------------
         start = std::chrono::high_resolution_clock::now();
             for (j = 0; j < repetition; j++) {
-                arr[(j * OFFSET) & mod] *= 10;
-                arr[(j * OFFSET) & mod] /= 10;
+                arr[(j * OFFSET) & mod]++;
+                arr[(j * OFFSET) & mod]--;
             }
         end = std::chrono::high_resolution_clock::now();
         //-------------------------------------------------------
         duration = chrono::duration_cast<chrono::microseconds>(end - start);
         results["duration"][to_string(sizes[i]/1024*sizeof(int))] = duration.count();
+        printf_debug("cpu rw: %d -> %d", sizes[i]/1024*sizeof(int), duration.count());
     }
     results["reps"] = repetition;
     results["size"] = sizeof(arr)/sizeof(int);
-    results["sum"] = sum;
+    printf("cpu rw: fin             \n");
 }
 
 template <int N, int M>
@@ -141,7 +150,6 @@ void cpu_test_read_write_split(json &results, int (&arr)[M], int (&sizes)[N], in
 
 int main(int argc,  char* argv[]) {
     map<int, long> results_write, results_read, results_rw, results_cpu;
-    static int arr[ARR_SIZE];
     int rep_cnt = (int)(argc >= 3 ? std::stof(argv[2]) * REP : 1 * REP);
     
     // chunk size for testing
@@ -152,19 +160,23 @@ int main(int argc,  char* argv[]) {
         // 4 * KB, 128 * KB, 8 * MB, 32 * MB
     };
     
-    // randomize array
+    // create and randomize array
+    printf_debug("creating array...         ");
+    static int arr[ARR_SIZE];
+    printf_debug("randomizing array...      ");
     for (int i = 0; i < sizeof(arr)/sizeof(int); i++) {
-        arr[i] = rand();
+        arr[i] = (i * 13778941) % 35;
     }
-    
+    printf_debug("running tests...         ");
     json results;
     
-    cpu_test    (results["cpu"], rep_cnt);
+    cpu_test    (results["cpu"], rep_cnt * 100);
     cpu_test_r  (results["r"], arr, sizes, rep_cnt);
     cpu_test_w  (results["w"], arr, sizes, rep_cnt);
     cpu_test_rw (results["rw"], arr, sizes, rep_cnt);
     
-    cout << results.dump(true) << endl;
+    printf_debug("generating output...    ");
+    // cout << results.dump(true) << endl;
     if (argc >= 2) {
         ofstream ofs (argv[1]);
         ofs << results.dump(true) << endl;
