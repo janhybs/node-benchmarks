@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <time.h>
 #include <vector>
-#include <map>
 #include <chrono>
 #include <iostream>
 #include <fstream>
@@ -25,39 +24,27 @@ void print_result(int size, long time) {
     printf("%5d, %10.3f\n", size/1024, time/1000.0);
 }
 
-template <int N, int M>
-map<int, long> cpu_test_write(int (&arr)[M], int (&sizes)[N], int repetition = REP) {
-    map<int, long> results;
-
+void cpu_test(json &results, int repetition = REP) {
     chrono::high_resolution_clock::time_point start, end;
-    std::chrono::duration<double, std::micro> duration;
-    int i, j, mod;
-    const int i_max = sizeof(sizes)/sizeof(int);
-    for (i = 0; i < i_max; i++) {
-        mod = sizes[i] - 1;
-        //-------------------------------------------------------
-        start = std::chrono::high_resolution_clock::now();
-            for (j = 0; j < repetition; j++) {
-                arr[(j * OFFSET) & mod] = 0;
-            }
-        end = std::chrono::high_resolution_clock::now();
-        //-------------------------------------------------------
-        duration = std::chrono::duration_cast<chrono::nanoseconds>(end - start);
-        results[sizes[i]] = duration.count();
-        print_result_debug(sizes[i], results[sizes[i]]);
-    }
-    cout << "\rCPU write test ended                                 \n";
-    
-    return results;
+    chrono::duration<double, micro> duration;
+    int i, sum;
+    //-------------------------------------------------------
+    start = std::chrono::high_resolution_clock::now();
+        for (i = 0; i < repetition; i++) {
+            sum += i;
+        }
+    end = std::chrono::high_resolution_clock::now();
+    //-------------------------------------------------------
+    duration = chrono::duration_cast<chrono::microseconds>(end - start);
+    results["duration"] = duration.count();
+    results["reps"] = repetition;
 }
 
 
 template <int N, int M>
-map<int, long> cpu_test_read(int (&arr)[M], int (&sizes)[N], int repetition = REP) {
-    map<int, long> results;
-
+void cpu_test_r(json &results, int (&arr)[M], int (&sizes)[N], int repetition = REP) {
     chrono::high_resolution_clock::time_point start, end;
-    std::chrono::duration<double, std::micro> duration;
+    chrono::duration<double, micro> duration;
     int i, j, mod, sum;
     const int i_max = sizeof(sizes)/sizeof(int);
     for (i = 0; i < i_max; i++) {
@@ -69,22 +56,66 @@ map<int, long> cpu_test_read(int (&arr)[M], int (&sizes)[N], int repetition = RE
             }
         end = std::chrono::high_resolution_clock::now();
         //-------------------------------------------------------
-        duration = std::chrono::duration_cast<chrono::nanoseconds>(end - start);
-        results[sizes[i]] = duration.count();
-        print_result_debug(sizes[i], results[sizes[i]]);
+        duration = chrono::duration_cast<chrono::microseconds>(end - start);
+        results["duration"][to_string(sizes[i]/1024*sizeof(int))] = duration.count();
     }
-    cout << "\rCPU read test ended                                 " << sum << endl;
-    
-    return results;
+    results["reps"] = repetition;
+    results["size"] = sizeof(arr)/sizeof(int);
+    results["sum"] = sum;
 }
 
 
 template <int N, int M>
-map<int, long> cpu_test_read_write_split(int (&arr)[M], int (&sizes)[N], int repetition = REP) {
-    map<int, long> results;
-
+void cpu_test_w(json &results, int (&arr)[M], int (&sizes)[N], int repetition = REP) {
     chrono::high_resolution_clock::time_point start, end;
-    std::chrono::duration<double, std::micro> duration;
+    chrono::duration<double, micro> duration;
+    int i, j, mod;
+    const int i_max = sizeof(sizes)/sizeof(int);
+    for (i = 0; i < i_max; i++) {
+        mod = sizes[i] - 1;
+        //-------------------------------------------------------
+        start = std::chrono::high_resolution_clock::now();
+            for (j = 0; j < repetition; j++) {
+                arr[(j * OFFSET) & mod] = 0;
+            }
+        end = std::chrono::high_resolution_clock::now();
+        //-------------------------------------------------------
+        duration = chrono::duration_cast<chrono::microseconds>(end - start);
+        results["duration"][to_string(sizes[i]/1024*sizeof(int))] = duration.count();
+    }
+    results["reps"] = repetition;
+    results["size"] = sizeof(arr)/sizeof(int);
+}
+
+
+template <int N, int M>
+void cpu_test_rw(json &results, int (&arr)[M], int (&sizes)[N], int repetition = REP) {
+    chrono::high_resolution_clock::time_point start, end;
+    chrono::duration<double, micro> duration;
+    int i, j, mod, sum;
+    const int i_max = sizeof(sizes)/sizeof(int);
+    for (i = 0; i < i_max; i++) {
+        mod = sizes[i] - 1;
+        //-------------------------------------------------------
+        start = std::chrono::high_resolution_clock::now();
+            for (j = 0; j < repetition; j++) {
+                arr[(j * OFFSET) & mod] *= 10;
+                arr[(j * OFFSET) & mod] /= 10;
+            }
+        end = std::chrono::high_resolution_clock::now();
+        //-------------------------------------------------------
+        duration = chrono::duration_cast<chrono::microseconds>(end - start);
+        results["duration"][to_string(sizes[i]/1024*sizeof(int))] = duration.count();
+    }
+    results["reps"] = repetition;
+    results["size"] = sizeof(arr)/sizeof(int);
+    results["sum"] = sum;
+}
+
+template <int N, int M>
+void cpu_test_read_write_split(json &results, int (&arr)[M], int (&sizes)[N], int repetition = REP) {
+    chrono::high_resolution_clock::time_point start, end;
+    chrono::duration<double, micro> duration;
     int i, j, mod, sum;
     const int i_max = sizeof(sizes)/sizeof(int);
     for (i = 0; i < i_max; i++) {
@@ -99,49 +130,21 @@ map<int, long> cpu_test_read_write_split(int (&arr)[M], int (&sizes)[N], int rep
             }
         end = std::chrono::high_resolution_clock::now();
         //-------------------------------------------------------
-        duration = std::chrono::duration_cast<chrono::nanoseconds>(end - start);
-        results[sizes[i]] = duration.count();
-        print_result_debug(sizes[i], results[sizes[i]]);
+        duration = chrono::duration_cast<chrono::microseconds>(end - start);
+        results["duration"][to_string(sizes[i]/1024*sizeof(int))] = duration.count();
     }
-    cout << "\rCPU r/w test ended                                 " << sum << endl;
-    
-    return results;
+    results["reps"] = repetition;
+    results["size"] = sizeof(arr)/sizeof(int);
+    results["sum"] = sum;
 }
-
-template <int N, int M>
-map<int, long> cpu_test_read_write(int (&arr)[M], int (&sizes)[N], int repetition = REP) {
-    map<int, long> results;
-
-    chrono::high_resolution_clock::time_point start, end;
-    std::chrono::duration<double, std::micro> duration;
-    int i, j, mod, sum;
-    const int i_max = sizeof(sizes)/sizeof(int);
-    for (i = 0; i < i_max; i++) {
-        mod = sizes[i] - 1;
-        //-------------------------------------------------------
-        start = std::chrono::high_resolution_clock::now();
-            for (j = 0; j < repetition; j++) {
-                arr[(j * OFFSET) & mod] *= 10;
-                arr[(j * OFFSET) & mod] /= 10;
-            }
-        end = std::chrono::high_resolution_clock::now();
-        //-------------------------------------------------------
-        duration = std::chrono::duration_cast<chrono::nanoseconds>(end - start);
-        results[sizes[i]] = duration.count();
-        print_result_debug(sizes[i], results[sizes[i]]);
-    }
-    cout << "\rCPU r/w test ended                                 " << sum << endl;
-    
-    return results;
-}
-
 
 
 int main(int argc,  char* argv[]) {
-    map<int, long> results_write, results_read, results_rw;
+    map<int, long> results_write, results_read, results_rw, results_cpu;
     static int arr[ARR_SIZE];
-    float rep_cnt = argc >= 3 ? std::stof(argv[2]) : 1;
+    int rep_cnt = (int)(argc >= 3 ? std::stof(argv[2]) * REP : 1 * REP);
     
+    // chunk size for testing
     static int sizes[] = {
         // 1, 2, 4, 8, 16, 32, 64, 128, 256, 512,
         1 * KB, 2 * KB, 4 * KB, 8 * KB, 16 * KB, 32 * KB, 64 * KB, 128 * KB,
@@ -149,38 +152,47 @@ int main(int argc,  char* argv[]) {
         // 4 * KB, 128 * KB, 8 * MB, 32 * MB
     };
     
+    // randomize array
     for (int i = 0; i < sizeof(arr)/sizeof(int); i++) {
         arr[i] = rand();
     }
     
+    json results;
+    
+    cpu_test    (results["cpu"], rep_cnt);
+    cpu_test_r  (results["r"], arr, sizes, rep_cnt);
+    cpu_test_w  (results["w"], arr, sizes, rep_cnt);
+    cpu_test_rw (results["rw"], arr, sizes, rep_cnt);
+    
+    cout << results.dump(true) << endl;
+    if (argc >= 2) {
+        ofstream ofs (argv[1]);
+        ofs << results.dump(true) << endl;
+    }
     // results_read =  cpu_test_read(arr, sizes, REP * rep_cnt);
     // results_write = cpu_test_write(arr, sizes, REP * rep_cnt);
-    results_rw =    cpu_test_read_write(arr, sizes, REP * rep_cnt);
+    // results_rw =    cpu_test_read_write(arr, sizes, REP * rep_cnt);
+    // results_cpu = cpu_test(REP * rep_cnt);
     
-    printf("%5s\t%5s\t%5s\t%5s\n", "size","read", "write", "r/w");
+    // printf("%5s\t%5s\t%5s\t%5s\n", "size","read", "write", "r/w");
     
     
     // store additional information about experiment
-    json j;
-    j["reps"] = (int)(REP * rep_cnt);
-    j["offset"] = OFFSET;
-    j["arr_size"] = ARR_SIZE;
-    for(int i = 0; i < sizeof(sizes)/sizeof(int); i++) {
-        int size = (int)((sizes[i]/1024)*sizeof(int));
-        printf("%d\t%1.3f\t%1.3f\t%1.3f\n", size, 
-        results_read[sizes[i]]/1000.0,
-        results_write[sizes[i]]/1000.0,
-        results_rw[sizes[i]]/1000.0);
-        
-        j["rw"]["data"][to_string(size)] = results_rw[sizes[i]];
-    }
+    // j["reps"] = (int)(REP * rep_cnt);
+    // j["offset"] = OFFSET;
+    // j["arr_size"] = ARR_SIZE;
+    // for(int i = 0; i < sizeof(sizes)/sizeof(int); i++) {
+    //     int size = (int)((sizes[i]/1024)*sizeof(int));
+    //     printf("%d\t%1.3f\t%1.3f\t%1.3f\n", size, 
+    //     results_read[sizes[i]]/1000.0,
+    //     results_write[sizes[i]]/1000.0,
+    //     results_rw[sizes[i]]/1000.0);
+    //     
+    //     j["rw"]["data"][to_string(size)] = results_rw[sizes[i]];
+    // }
     
     // write results to cout and json file
-    cout << setw(4) << j << endl;
-    if (argc >= 2) {
-        ofstream ofs (argv[1]);
-        ofs << setw(4) << j << endl;
-    }
+
     
     return 0;
 }
