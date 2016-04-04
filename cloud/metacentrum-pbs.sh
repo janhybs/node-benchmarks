@@ -20,7 +20,7 @@ module add python26-modules-gcc
 module add numpy-py2.6
 module add python-2.7.6-gcc
 
-# just in case pritn g++ version
+# just in case print g++ version
 g++ --version
 
 # running test by first cloning and then installing
@@ -29,7 +29,7 @@ git clone https://github.com/x3mSpeedy/node-benchmarks.git
 cd node-benchmarks
 source ./configure
 make all
-make test results.json
+make ARGS="results.json 1" test
 # -------------------------------------------------------
 
 
