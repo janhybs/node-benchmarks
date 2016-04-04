@@ -23,6 +23,10 @@ module add python-2.7.6-gcc
 # just in case print g++ version
 g++ --version
 
+
+HOST_NAME=$(hostname)
+NOW=$(date +"%Y-%m-%d-%S-%N")
+
 # running test by first cloning and then installing
 # -------------------------------------------------------
 git clone https://github.com/x3mSpeedy/node-benchmarks.git
@@ -30,10 +34,18 @@ cd node-benchmarks
 source ./configure
 make all
 make ARGS="results.json 1" test
+cp results.json "/home/jan-hybs/results/results-$HOST_NAME-$NOW-l.json"
+# -------------------------------------------------------
+# running test again on SCRATCHDIR
+# -------------------------------------------------------
+trap 'clean_scratch' TERM EXIT
+cd $SCRATCHDIR
+git clone https://github.com/x3mSpeedy/node-benchmarks.git
+cd node-benchmarks
+source ./configure
+make all
+make ARGS="results.json 1" test
+cp results.json "/home/jan-hybs/results/results-$HOST_NAME-$NOW-s.json"
 # -------------------------------------------------------
 
-
-# save results
-HOST_NAME=$(hostname)
-NOW=$(date +"%Y-%m-%d-%S-%N")
-cp results.json "/home/jan-hybs/results/results-$HOST_NAME-$NOW.json"
+exit
