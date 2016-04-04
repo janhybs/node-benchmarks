@@ -10,7 +10,7 @@
 
 #define KB  1024
 #define MB  1048576
-#define REP MB
+#define REP (MB * 3)
 #define OFFSET 256
 #define ARR_SIZE (MB * 100)
 
@@ -23,6 +23,9 @@
 
 #define CHAR_SIZE sizeof(char)
 #define INT_SIZE  sizeof(int)
+
+#define SHOW_DURATION false
+#define SHOW_DETAILS  false
 
 using namespace std;
 using json = nlohmann::json;
@@ -65,8 +68,16 @@ void cpu_test(json &results, int repetition = REP) {
         }
     timer.stop();
     //-------------------------------------------------------
-    results["duration"] = timer.duration.count();
-    results["reps"] = repetition;
+    
+    if (SHOW_DURATION) {
+        results["duration"] = timer.duration.count();
+    }
+    
+    if (SHOW_DETAILS) {
+        results["reps"] = repetition;
+    }
+    
+    results["MB_per_sec"] = (repetition * INT_SIZE)/ (timer.duration.count() * NANO) / MEGA;
 }
 
 
@@ -81,6 +92,7 @@ void cpu_test_r(json &results, int (&arr)[M], int (&sizes)[N], int repetition = 
     for (i = 0; i < i_max; i++) {
         mod = sizes[i] - 1;
         printf_debug("buffer size %9d kB...", sizes[i] / KB);
+        
         //-------------------------------------------------------
         timer.start();
             for (j = 0; j < repetition; j++)  {
@@ -88,11 +100,19 @@ void cpu_test_r(json &results, int (&arr)[M], int (&sizes)[N], int repetition = 
             }
         timer.stop();
         //-------------------------------------------------------
-        results["duration"][to_string(sizes[i]/1024 * INT_SIZE)] = timer.duration.count();
+        
+        if (SHOW_DURATION) {
+            results["duration"][to_string(sizes[i]/1024 * INT_SIZE)] = timer.duration.count() * NANO;
+        }
+        
+        results["MB_per_sec"][to_string(sizes[i]/1024 * INT_SIZE)] = (repetition * INT_SIZE)/ (timer.duration.count() * NANO) / MEGA;
     }
-    results["reps"] = repetition;
-    results["size"] = sizeof(arr) / INT_SIZE;
-    results["sum"] = sum;
+    
+    if (SHOW_DETAILS) {
+        results["reps"] = repetition;
+        results["size"] = sizeof(arr) / INT_SIZE;
+        results["sum"] = sum;
+    }
 }
 
 
@@ -107,6 +127,7 @@ void cpu_test_w(json &results, int (&arr)[M], int (&sizes)[N], int repetition = 
     for (i = 0; i < i_max; i++) {
         mod = sizes[i] - 1;
         printf_debug("buffer size %9d kB...", sizes[i] / KB);
+        
         //-------------------------------------------------------
         timer.start();
             for (j = 0; j < repetition; j++) {
@@ -114,10 +135,18 @@ void cpu_test_w(json &results, int (&arr)[M], int (&sizes)[N], int repetition = 
             }
         timer.stop();
         //-------------------------------------------------------
-        results["duration"][to_string(sizes[i]/1024 * INT_SIZE)] = timer.duration.count();
+        
+        if (SHOW_DURATION) {
+            results["duration"][to_string(sizes[i]/1024 * INT_SIZE)] = timer.duration.count() * NANO;
+        }
+        
+        results["MB_per_sec"][to_string(sizes[i]/1024 * INT_SIZE)] = (repetition * INT_SIZE)/ (timer.duration.count() * NANO) / MEGA;
     }
-    results["reps"] = repetition;
-    results["size"] = sizeof(arr) / INT_SIZE;
+    
+    if (SHOW_DETAILS) {
+        results["reps"] = repetition;
+        results["size"] = sizeof(arr) / INT_SIZE;
+    }
 }
 
 
@@ -132,6 +161,7 @@ void cpu_test_rw(json &results, int (&arr)[M], int (&sizes)[N], int repetition =
     for (i = 0; i < i_max; i++) {
         mod = sizes[i] - 1;
         printf_debug("buffer size %9d kB...", sizes[i] / KB);
+        
         //-------------------------------------------------------
         timer.start();
             for (j = 0; j < repetition; j++) {
@@ -140,10 +170,18 @@ void cpu_test_rw(json &results, int (&arr)[M], int (&sizes)[N], int repetition =
             }
         timer.stop();
         //-------------------------------------------------------
-        results["duration"][to_string(sizes[i]/1024 * INT_SIZE)] = timer.duration.count();
+        
+        if (SHOW_DURATION) {
+            results["duration"][to_string(sizes[i]/1024 * INT_SIZE)] = timer.duration.count() * NANO;
+        }
+        
+        results["MB_per_sec"][to_string(sizes[i]/1024 * INT_SIZE)] = (repetition * INT_SIZE)/ (timer.duration.count() * NANO) / MEGA;
     }
-    results["reps"] = repetition;
-    results["size"] = sizeof(arr) * INT_SIZE;
+    
+    if (SHOW_DETAILS) {
+        results["reps"] = repetition;
+        results["size"] = sizeof(arr) * INT_SIZE;
+    }
 }
 
 template <int N>
@@ -167,6 +205,7 @@ void io_test_rw(json &results, int (&sizes)[N], int file_size, const int buffer_
         
         // write file
         write_stream.open(fname.c_str(), ios::binary | ios::out);
+        
         //-------------------------------------------------------
         timer_w.start();
             for (int j = 0; j < repetition; j++) {
@@ -174,6 +213,7 @@ void io_test_rw(json &results, int (&sizes)[N], int file_size, const int buffer_
             }
         timer_w.stop();
         //-------------------------------------------------------
+        
         if (write_stream.fail()) {
             // buffer may be too big so ignore this 
             write_stream.close();    
@@ -185,6 +225,7 @@ void io_test_rw(json &results, int (&sizes)[N], int file_size, const int buffer_
         
         // read file
         read_stream.open(fname.c_str(), ios::binary | ifstream::in);
+        
         //-------------------------------------------------------
         timer_r.start();
             for (int j = 0; j < repetition; j++) {
@@ -192,6 +233,7 @@ void io_test_rw(json &results, int (&sizes)[N], int file_size, const int buffer_
             }
         timer_r.stop();
         //-------------------------------------------------------
+        
         if (read_stream.fail()) {
             // buffer may be too big so ignore this 
             read_stream.close();    
@@ -203,13 +245,18 @@ void io_test_rw(json &results, int (&sizes)[N], int file_size, const int buffer_
         
         remove(fname.c_str());
         
-        results["write"]["duration"][to_string(sizes[i] * CHAR_SIZE)] = timer_w.duration.count() * NANO;
-        results["write"]["eff"][to_string(sizes[i] * CHAR_SIZE)] = ((repetition * sizes[i])/timer_w.duration.count() / NANO) / MEGA;
+        if (SHOW_DURATION) {
+            results["write"]["duration"][to_string(sizes[i] * CHAR_SIZE)] = timer_w.duration.count() * NANO;
+            results["read"]["duration"][to_string(sizes[i] * CHAR_SIZE)] = timer_r.duration.count() * NANO;
+        }
         
-        results["read"]["duration"][to_string(sizes[i] * CHAR_SIZE)] = timer_r.duration.count() * NANO;
-        results["read"]["eff"][to_string(sizes[i] * CHAR_SIZE)] = ((repetition * sizes[i])/timer_r.duration.count() / NANO) / MEGA;
+        results["write"]["MB_per_sec"][to_string(sizes[i] * CHAR_SIZE)] = ((repetition * sizes[i])/timer_w.duration.count() / NANO) / MEGA;
+        results["read"]["MB_per_sec"][to_string(sizes[i] * CHAR_SIZE)] = ((repetition * sizes[i])/timer_r.duration.count() / NANO) / MEGA;
     }
-    results["size"] = file_size;
+    
+    if (SHOW_DETAILS) {
+        results["size"] = file_size;
+    }
 }
 
 void io_test_many(json &results, int no_files = KILO) {
@@ -222,6 +269,7 @@ void io_test_many(json &results, int no_files = KILO) {
     printf("-- running IO  R/W latency test with %d files\n", no_files);
     
     printf_debug("writing test...");
+    
     //-------------------------------------------------------
     timer_w.start();
     for (i = 0; i < no_files; i++) {
@@ -235,6 +283,7 @@ void io_test_many(json &results, int no_files = KILO) {
     
     
     printf_debug("reading test...");
+    
     //-------------------------------------------------------
     timer_r.start();
     for (i = 0; i < no_files; i++) {
@@ -248,6 +297,7 @@ void io_test_many(json &results, int no_files = KILO) {
     
     
     printf_debug("removing test...");
+    
     //-------------------------------------------------------
     timer_d.start();
     // remove files
@@ -258,10 +308,19 @@ void io_test_many(json &results, int no_files = KILO) {
     timer_d.stop();
     //-------------------------------------------------------
     
-    results["write"]["duration"] = timer_w.duration.count() * NANO;
-    results["read"]["duration"]  = timer_r.duration.count() * NANO;
-    results["del"]["duration"]   = timer_d.duration.count() * NANO;
-    results["count"] = no_files;
+    if (SHOW_DURATION) {
+        results["write"]["duration"]        = timer_w.duration.count() * NANO;
+        results["read"]["duration"]         = timer_r.duration.count() * NANO;
+        results["del"]["duration"]          = timer_d.duration.count() * NANO;
+    }
+    
+    results["write"]["files_per_sec"]   = (float)no_files / (timer_w.duration.count() * NANO);
+    results["read"]["files_per_sec"]    = (float)no_files / (timer_r.duration.count() * NANO);
+    results["del"]["files_per_sec"]     = (float)no_files / (timer_d.duration.count() * NANO);
+    
+    if (SHOW_DETAILS) {
+        results["count"] = no_files;
+    }
 }
 
 
