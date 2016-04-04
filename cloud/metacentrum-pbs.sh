@@ -34,4 +34,6 @@ make test results.json
 
 
 # save results
-cp results.json /home/jan-hybs/results/results.json
+HOST_NAME=$(hostname)
+NOW=$(date +"%Y-%m-%d-%S-%N")
+cp results.json "/home/jan-hybs/results/results-$HOST_NAME-$NOW.json"
