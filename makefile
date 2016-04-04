@@ -3,12 +3,9 @@ all:
 	$(CXX) -O0 -std=c++11 src/memory.cc -o O0.out
 	lscpu
 
-.PHONY: O0.out
-O0.out:
-	 ./O0.out
- 
 .PHONY: test
-test: O0.out
+test: 
+	./O0.out ${ARGS}
  
 .PHONY: install
 install:
@@ -18,3 +15,4 @@ install:
 .PHONY: clear
 clear:
 	rm -f *.out 
+	rm -f *.tmp
