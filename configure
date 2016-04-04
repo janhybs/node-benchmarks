@@ -2,8 +2,10 @@
 # file: configure
 
 CXX=g++
-if which g++-4.8 >/dev/null; then
+if which g++-4.8 >/dev/null 2>/dev/null; then
     CXX=g++-4.8
 fi
 
+# export compiler and set language to english
 export CXX=$CXX
+export LC_ALL=C
