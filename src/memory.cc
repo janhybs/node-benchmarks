@@ -314,9 +314,9 @@ void io_test_many(json &results, int no_files = KILO) {
         results["del"]["duration"]          = timer_d.duration.count() * NANO;
     }
     
-    results["write"]["files_per_sec"]   = (float)no_files / (timer_w.duration.count() * NANO);
-    results["read"]["files_per_sec"]    = (float)no_files / (timer_r.duration.count() * NANO);
-    results["del"]["files_per_sec"]     = (float)no_files / (timer_d.duration.count() * NANO);
+    results["write"]["k_files_per_sec"]   = (float)no_files / (timer_w.duration.count() * NANO) / KILO;
+    results["read"]["k_files_per_sec"]    = (float)no_files / (timer_r.duration.count() * NANO) / KILO;
+    results["del"]["k_files_per_sec"]     = (float)no_files / (timer_d.duration.count() * NANO) / KILO;
     
     if (SHOW_DETAILS) {
         results["count"] = no_files;
