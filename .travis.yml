@@ -9,19 +9,11 @@ before_install:
   - sudo apt-get update -qq
 
 install:
-  - sudo apt-get install -qq g++-4.8
-  - export CXX="g++-4.8"
-  - cd src
-  - g++-4.8     -std=c++11 memory.cc -o OO.out
-  - g++-4.8 -O0 -std=c++11 memory.cc -o O0.out
-  # - g++-4.8 -O1 -std=c++11 memory.cc -o O1.out
-  # - g++-4.8 -O2 -std=c++11 memory.cc -o O2.out
-  # - g++-4.8 -O3 -std=c++11 memory.cc -o O3.out
-  - lscpu
+  - source ./configure
+  - make
 
 script:
-  - ./OO.out
-  - ./O0.out
+  - make O0.out
   # - ./O1.out
   # - ./O2.out
   # - ./O3.out
