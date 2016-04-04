@@ -25,7 +25,7 @@ g++ --version
 
 
 HOST_NAME=$(hostname)
-NOW=$(date +"%Y-%m-%d-%S-%N")
+NOW=$(date +"%s")
 
 # running test by first cloning and then installing
 # -------------------------------------------------------
