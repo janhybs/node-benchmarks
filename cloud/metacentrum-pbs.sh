@@ -3,7 +3,7 @@
 #PBS -l mem=2gb
 #PBS -l scratch=1gb
 #PBS -l nodes=1:ppn=1
-#PBS -l walltime=00:04:30
+#PBS -l walltime=00:20:00
 #PBS -j oe
 #PBS -m abe
 #
@@ -29,6 +29,8 @@ NOW=$(date +"%s")
 
 # running test by first cloning and then installing
 # run test in SCRATCHDIR since io operations are much faster
+# first we clone node-benchmarks repo and install c++ program
+# via function call we execute test several times
 # -------------------------------------------------------
 trap 'clean_scratch' TERM EXIT
 echo "SCRATCHDIR=$SCRATCHDIR"
@@ -37,8 +39,17 @@ git clone https://github.com/x3mSpeedy/node-benchmarks.git
 cd node-benchmarks
 source ./configure
 make all
-make ARGS="results.json 1" test
-cp results.json "/storage/praha1/home/jan-hybs/results/$HOST_NAME-$NOW.json"
 # -------------------------------------------------------
-
+function run_experiment {
+    make ARGS="results.json 1" test
+    cp results.json "/storage/praha1/home/jan-hybs/results/$HOST_NAME-$NOW.json"
+}
+# -------------------------------------------------------
+for i in {1..10}
+do
+    echo "------ running experiment $i ------"
+    echo "-----------------------------------"
+    run_experiment
+done
+# -------------------------------------------------------
 exit
