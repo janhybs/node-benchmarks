@@ -28,24 +28,17 @@ HOST_NAME=$(hostname)
 NOW=$(date +"%s")
 
 # running test by first cloning and then installing
-# -------------------------------------------------------
-git clone https://github.com/x3mSpeedy/node-benchmarks.git
-cd node-benchmarks
-source ./configure
-make all
-make ARGS="results.json 1" test
-cp results.json "/home/jan-hybs/results/results-$HOST_NAME-$NOW-l.json"
-# -------------------------------------------------------
-# running test again on SCRATCHDIR
+# run test in SCRATCHDIR since io operations are much faster
 # -------------------------------------------------------
 trap 'clean_scratch' TERM EXIT
+echo "SCRATCHDIR=$SCRATCHDIR"
 cd $SCRATCHDIR
 git clone https://github.com/x3mSpeedy/node-benchmarks.git
 cd node-benchmarks
 source ./configure
 make all
 make ARGS="results.json 1" test
-cp results.json "/home/jan-hybs/results/results-$HOST_NAME-$NOW-s.json"
+cp results.json "/storage/praha1/home/jan-hybs/results/$HOST_NAME-$NOW.json"
 # -------------------------------------------------------
 
 exit
