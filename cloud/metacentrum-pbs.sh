@@ -23,10 +23,6 @@ module add python-2.7.6-gcc
 # just in case print g++ version
 g++ --version
 
-
-HOST_NAME=$(hostname)
-NOW=$(date +"%s")
-
 # running test by first cloning and then installing
 # run test in SCRATCHDIR since io operations are much faster
 # first we clone node-benchmarks repo and install c++ program
@@ -41,6 +37,8 @@ source ./configure
 make all
 # -------------------------------------------------------
 function run_experiment {
+    HOST_NAME=$(hostname)
+    NOW=$(date +"%s")
     make ARGS="results.json 1" test
     cp results.json "/storage/praha1/home/jan-hybs/results/$HOST_NAME-$NOW.json"
 }
