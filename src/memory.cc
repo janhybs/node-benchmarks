@@ -24,8 +24,8 @@
 #define CHAR_SIZE sizeof(char)
 #define INT_SIZE  sizeof(int)
 
-#define SHOW_DURATION false
-#define SHOW_DETAILS  false
+#define SHOW_DURATION true
+#define SHOW_DETAILS  true
 
 using namespace std;
 using json = nlohmann::json;
