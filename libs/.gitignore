@@ -1,0 +1,6 @@
+# Ignore everything, no exception!
+*
+
+# Except... not these files...
+!.gitignore
+!requirements.txt

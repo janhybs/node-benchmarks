@@ -1,0 +1,4 @@
+simplejson
+pymongo
+pyyaml
+psutil
