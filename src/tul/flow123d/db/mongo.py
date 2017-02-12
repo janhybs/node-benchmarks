@@ -35,14 +35,43 @@ class Mongo(object):
 
     mongo = None
 
-    def __init__(self):
-        self.client = MongoClient()
+    def __init__(self, auto_auth=True):
+        self.client = MongoClient("hybs.nti.tul.cz")
         self.db = self.client.get_database('bench')
         self.bench = self.db.get_collection('bench')
         self.nodes = self.db.get_collection('nodes')
         self.flat_copy = self.db.get_collection('flat_copy')
         self.flat = self.db.get_collection('flat')
+        if auto_auth and self.needs_auth():
+            self.auth()
         Mongo.mongo = self
+    
+    def needs_auth(self):
+        try:
+            self.db.collection_names()
+            return False
+        except:
+            return True
+    
+    def auth(self, username=None, password=None, config_file=None):
+        if username is None:
+            import os
+            import yaml
+            if config_file is None:
+                root = __file__
+                # recursively go down until src folder is found
+                while True:
+                    if os.path.basename(root) == 'src':
+                        root = os.path.dirname(root)
+                        break
+                    root = os.path.dirname(root)
+                config_file = os.path.join(root, '.config.yaml')
+            # load config and extract username and password
+            config = yaml.load(open(config_file, 'r').read())
+            username = config.get('pymongo').get('username')
+            password = config.get('pymongo').get('password')
+        
+        return self.client.admin.authenticate(username, password)
 
     def create_flat(self):
         cursor = self.bench.find()

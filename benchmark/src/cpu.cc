@@ -11,6 +11,7 @@
 
 #include "libs/json.hpp"
 #include "libs/md5.hpp"
+#include "libs/SparseMatrix/SparseMatrix.cpp"
 
 #define KB  1024
 #define MB  1048576
@@ -53,6 +54,16 @@ unsigned long random_long(void) {          //period 2^96-1
    z = t ^ x ^ y;
 
   return z;
+}
+
+/**
+ * Function will return random value between min and max
+ * @param  min min value inclusive
+ * @param  max max value inclusive
+ * @return     <min, max>
+ */
+int random_range(int min=1, int max=9) {
+    return min + (rand() % (int)(max - min + 1));
 }
 
 
@@ -153,7 +164,8 @@ void test_reg_simple(json &results, int reps = 512) {
     timer.stop();
     //-------------------------------------------------------
     results["duration"] = timer.duration.count() * NANO;
-    results["size"]     = reps * REP;
+    results["size"]     = REP;
+    results["reps"]     = reps;
 }
 
 
@@ -193,7 +205,8 @@ void test_reg_hash(json &results, int reps = 128) {
     timer.stop();
     //-------------------------------------------------------
     results["duration"] = timer.duration.count() * NANO;
-    results["size"]     = reps * REP;
+    results["size"]     = REP;
+    results["reps"]     = reps;
 }
 
 
@@ -232,7 +245,8 @@ void test_reg_md5(json &results, int reps = 1, int str_len = 16) {
     timer.stop();
     //-------------------------------------------------------
     results["duration"] = timer.duration.count() * NANO;
-    results["size"]     = reps * REP * str_len;
+    results["size"]     = REP * str_len;
+    results["reps"]     = reps;
 }
 
 
@@ -278,8 +292,8 @@ int* test_mem(json &results, int (&sizes)[N], int size = ARR_SIZE, int reps=32) 
     //-------------------------------------------------------
     
     results["duration"] = timer.duration.count() * NANO;
-    results["size"]     = REP * N * reps;
-    results["n"]        = N;
+    results["size"]     = N;
+    results["reps"]     = reps;
     return arr;
 }
 
@@ -317,13 +331,14 @@ void mat_mul(json &results, int size=256, int reps=16) {
     printf_debug("mat mul, size=%dx%d, reps=%d", size, size, reps);
     
     //-------------------------------------------------------
+    int k, row, col, inner;
     timer.start();
     // do the multiplication
-    for (size_t k = 0; k < reps; k++) {
-        for (int row = 0; row < size; row++) {
-            for (int col = 0; col < size; col++) {
+    for (k = 0; k < reps; k++) {
+        for (row = 0; row < size; row++) {
+            for (col = 0; col < size; col++) {
                 // Multiply the row of A by the column of B to get the row, column of product.
-                for (int inner = 0; inner < size; inner++) {
+                for (inner = 0; inner < size; inner++) {
                     product[row][col] += aMatrix[row][inner] * bMatrix[inner][col];
                 }
             }
@@ -333,9 +348,169 @@ void mat_mul(json &results, int size=256, int reps=16) {
     //-------------------------------------------------------
     
     results["duration"] = timer.duration.count() * NANO;
-    results["size"]     = reps * size * size * size;
+    results["size"]     = size;
+    results["reps"]     = reps;
 }
 
+
+/**
+ * Test will generate random matrix rows x cols, and 
+ * vector of length cols and populate both structures with data (for matrix 
+ * total of n data is generated).
+ * We then perform matrix vector multiplication (format CSR for sparse matrices)
+ *
+ * This test is testing MEMORY speed and also CPU speed. Memory access is random-like
+ * 
+ * 
+ * Following json dictionary is merged with given json:
+ *    {
+ *      duration: <duration in seconds>,
+ *      size:     <total number of operations>
+ *    }
+ */
+void test_sparse_mat_vec(json &results, int rows=100, int cols=100, int n=10, int reps=512) {
+    SparseMatrix<int> mat(rows, cols);
+    vector<int> vec(cols, 0);
+    Timer timer;
+    
+    printf_debug("generating matrices, size=%dx%d, reps=%d", rows, cols, reps);
+    
+    // initialize matrix values
+    int x, y;
+    for (size_t i = 0; i < n; i++) {
+        int val = 0;
+        do {
+            x = random_range(1, rows);
+            y = random_range(1, cols);
+            val = mat.get(x, y);
+        } while(val != 0);
+        
+        mat.set(
+            random_long(),      // random value
+            x,                  // random x coordinate (indexing from 1)
+            y                   // random y coordinate (indexing from 1)
+        );
+    }
+    
+    // initialize vector values
+    for (size_t i = 0; i < cols; i++) {
+        vec[i] = random_long();
+    }
+    
+    printf_debug("sparse mat vec mul, size=%dx%d, reps=%d", rows, cols, reps);
+    double time_total = 0;
+    //-------------------------------------------------------
+    int i;
+    timer.start();
+    for (i = 0; i < reps; i++) {
+        vector<int> result;
+        result = mat * vec;
+    }
+    timer.stop();
+    //-------------------------------------------------------
+    
+    
+    // std::cout << "\n" << mat << "\n\n * \n\n";
+    // for (auto i = vec.begin(); i != vec.end(); ++i) std::cout << *i << ' ';
+    // std::cout << "\n\n = \n\n";
+    // 
+    // for (auto i = result.begin(); i != result.end(); ++i)
+    //     std::cout << *i << ' ';
+    // std::cout << "\n\n";
+    
+    results["duration"] = timer.duration.count() * NANO;
+    results["size"]     = cols;
+    results["reps"]     = reps;
+}
+
+
+/**
+ * Test will generate random matrix rows x cols, and 
+ * vector of length cols and populate both structures with data (for matrix 
+ * total of n data is generated).
+ * We then perform matrix vector multiplication (format CSR for sparse matrices)
+ *
+ * This test is testing MEMORY speed and also CPU speed. Memory access is random-like
+ * 
+ * 
+ * Following json dictionary is merged with given json:
+ *    {
+ *      duration: <duration in seconds>,
+ *      size:     <total number of operations>
+ *    }
+ */
+void test_sparse_mat_mat(json &results, int rows=100, int cols=100, int n=10, int reps=512) {
+    SparseMatrix<int> A(rows, cols);
+    SparseMatrix<int> B(cols, rows);
+    Timer timer;
+    
+    printf_debug("generating matrices, size=%dx%d, reps=%d", rows, cols, reps);
+    
+    // initialize matrix values
+    int x, y;
+    for (size_t i = 0; i < n; i++) {
+        int val = 0;
+        do {
+            x = random_range(1, rows);
+            y = random_range(1, cols);
+            val = A.get(x, y);
+        } while(val != 0);
+        
+        A.set(
+            random_range(),      // random value
+            x,                  // random x coordinate (indexing from 1)
+            y                   // random y coordinate (indexing from 1)
+        );
+    }
+    
+    // initialize matrix values
+    for (size_t i = 0; i < n; i++) {
+        int val = 0;
+        do {
+            x = random_range(1, cols);
+            y = random_range(1, rows);
+            val = B.get(x, y);
+        } while(val != 0);
+        
+        B.set(
+            random_range(),      // random value
+            x,                  // random x coordinate (indexing from 1)
+            y                   // random y coordinate (indexing from 1)
+        );
+    }
+    
+    printf_debug("sparse mat mat mul, size=%dx%d, reps=%d", rows, cols, reps);
+    double time_total = 0;
+    
+    
+    
+    //-------------------------------------------------------
+    int i;
+    timer.start();
+    for (i = 0; i < reps; i++) {
+        SparseMatrix<int> C = A * B;
+        // std::cout << A;;
+        // std::cout << "\n\n*\n\n";
+        // std::cout << B;
+        // std::cout << "\n\n=\n\n";
+        // std::cout << C;
+    }
+    timer.stop();
+    //-------------------------------------------------------
+    
+    
+    // for (auto i = vec.begin(); i != vec.end(); ++i) std::cout << *i << ' ';
+    // std::cout << "\n\n = \n\n";
+    // 
+    // for (auto i = result.begin(); i != result.end(); ++i)
+    //     std::cout << *i << ' ';
+    // std::cout << "\n\n";
+    
+    results["duration"] = timer.duration.count() * NANO;
+    results["size"]     = cols;
+    results["reps"]     = reps;
+}
+    
 
 
 /**
@@ -398,11 +573,21 @@ int main(int argc,  char* argv[]) {
     test_reg_md5   (results["cpu_md5"]);
     
     
+    mat_mul(results["mmn_s1"],  16, 4*8*8*8*8*8);
+    mat_mul(results["mmn_s2"],  64, 4*8*8*8);
+    mat_mul(results["mmn_s3"], 128, 4*8*8);
+    mat_mul(results["mmn_s4"], 512, 4);
     
-    mat_mul(results["mat_mul_s1"],  16, 4*8*8*8*8*8);
-    mat_mul(results["mat_mul_s2"],  64, 4*8*8*8);
-    mat_mul(results["mat_mul_s3"], 128, 4*8*8);
-    mat_mul(results["mat_mul_s4"], 512, 4);
+    
+    test_sparse_mat_mat(results["mms_s1"],        8,        8,         8*2, 64*64*64);
+    test_sparse_mat_mat(results["mms_s2"],       32,       32,        32*2, 64*64);
+    test_sparse_mat_mat(results["mms_s3"],      128,      128,       128*2, 64);
+    test_sparse_mat_mat(results["mms_s4"],      512,      512,       512*2, 1);
+    
+    test_sparse_mat_vec(results["mvs_s1"],        8,        8,         8*2, 100*64*64*4*4);
+    test_sparse_mat_vec(results["mvs_s2"],       32,       32,        32*2, 100*64*64*4);
+    test_sparse_mat_vec(results["mvs_s3"],      128,      128,       128*2, 100*64*64);
+    test_sparse_mat_vec(results["mvs_s4"],     8192,      8192,     8192*2, 100*64);
     // ------------------------------------------------------------------------
     test_timer.stop();
     printf("---------------------------------\n");

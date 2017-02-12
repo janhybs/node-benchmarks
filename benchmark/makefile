@@ -1,7 +1,7 @@
 
 .PHONY: all
 all:
-	$(CXX) -O3 -std=c++11 src/cpu.cc src/libs/md5.cpp -Isrc -o O3.out
+	$(CXX) -O3 -std=c++11 src/cpu.cc src/libs/md5.cpp src/libs/SparseMatrix/SparseMatrix.cpp -Isrc -o O3.out
 	#lscpu
 
 
