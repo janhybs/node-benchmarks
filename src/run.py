@@ -20,5 +20,6 @@ import tul.flow123d.benchmark as benchmark
 
 # call benchmark methods
 benchmark.install_requirements()
+benchmark.make_all()
 json_file = benchmark.run_tests()
 benchmark.save_to_db(json_file)
