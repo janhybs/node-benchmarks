@@ -130,6 +130,91 @@ void printf_debug(const char * fmt, ...) {
     cout << flush;
 }
 
+/**
+ * Will generate random matrix rows x cols and will insert per_line random elements
+ * on single line, position is of these elements is random around diagonal with band spreading
+ * @param  rows
+ * @param  cols
+ * @param  per_line
+ * @param  band     rande of the element on the line is diagonal +- band
+ * @return
+ */
+SparseMatrix<int> generate_random_sparse_matrix(int rows, int cols, int per_line, int band) {
+    SparseMatrix<int> mat(rows, cols);
+    int left, right;
+    for (size_t i = 0; i < rows; i++) {
+        int middle = ((float)i / rows) * cols;
+        left = middle - band;
+        right = middle  + band;
+
+        if (band >= cols/2) {
+            left = 0;
+            right = cols;
+        } else {
+            if (left < 0) {
+                right += abs(left);
+                left = 0;
+            }
+
+            if (right >= cols) {
+                left += cols - right;
+                right = cols;
+            }
+        }
+
+        for (size_t j = 0; j < per_line; j++) {
+            int val = 0;
+            do {
+                x = i + 1;
+                y = random_range(left,right - 1) + 1;
+                val = mat.get(x, y);
+            } while(val != 0);
+
+            mat.set(
+                random_range(),     // random value
+                x,                  // random x coordinate (indexing from 1)
+                y                   // random y coordinate (indexing from 1)
+            );
+            // std::cout << x << ":  " << left << ", " << right << std::endl;
+            // mat.set(random_long(), i + 1, x + 1);
+        }
+    }
+    return mat;
+}
+
+/**
+ * Will generate new random vector of given lenght
+ * @param  length
+ * @return
+ */
+vector<int> generate_random_vector(int length) {
+    vector<int> vec(length, 0);
+    for (size_t i = 0; i < length; i++) {
+        vec[i] = random_long();
+    }
+    return vec;
+}
+
+/**
+ * Will print given matrix python style
+ * @param mat
+ */
+void print_matrix_python(SparseMatrix<int> mat) {
+    int rows = mat.getRowCount();
+    int cols = mat.getColumnCount();
+
+    std::cout << "[" << std::endl;
+    for (size_t i = 0; i < rows; i++) {
+        std::cout << "[";
+        for (size_t j = 0; j < cols; j++) {
+            std::cout << mat.get(i + 1, j + 1) << ", ";
+        }
+        std::cout << "]," << std::endl;
+    }
+    std::cout << "]" << std::endl;
+}
+
+
 
 /**
  * TEST will sum random longs for the given amount of reps
@@ -152,7 +237,6 @@ void printf_debug(const char * fmt, ...) {
 void test_reg_simple(json &results, int reps = 512) {
     printf_debug("cpu simple, size=%d, reps=%d", REP, reps);
     Timer timer;
-    
     //-------------------------------------------------------
     timer.start();
     int sum;
@@ -368,37 +452,19 @@ void mat_mul(json &results, int size=256, int reps=16) {
  *      size:     <total number of operations>
  *    }
  */
-void test_sparse_mat_vec(json &results, int rows=100, int cols=100, int n=10, int reps=512) {
-    SparseMatrix<int> mat(rows, cols);
-    vector<int> vec(cols, 0);
+void test_sparse_mat_vec(json &results, int rows=100, int cols=100, int per_line=10, int band=10, int reps=512) {
+    printf_debug("generating matrix, size=%dx%d, per_line=%d, band=%d           ",
+        rows, cols, per_line, band);
+    SparseMatrix<int> mat = generate_random_sparse_matrix(rows, cols, per_line, band);
+    
+    printf_debug("generating vector, size=%dx%d, per_line=%d, band=%d           ",
+        rows, cols, per_line, band);
+    vector<int> vec = generate_random_vector(cols);
+    
     Timer timer;
+    printf_debug("sparse mat vec mul, size=%dx%d, per_line=%d, band=%d          ",
+        rows, cols, per_line, band);
     
-    printf_debug("generating matrices, size=%dx%d, reps=%d", rows, cols, reps);
-    
-    // initialize matrix values
-    int x, y;
-    for (size_t i = 0; i < n; i++) {
-        int val = 0;
-        do {
-            x = random_range(1, rows);
-            y = random_range(1, cols);
-            val = mat.get(x, y);
-        } while(val != 0);
-        
-        mat.set(
-            random_long(),      // random value
-            x,                  // random x coordinate (indexing from 1)
-            y                   // random y coordinate (indexing from 1)
-        );
-    }
-    
-    // initialize vector values
-    for (size_t i = 0; i < cols; i++) {
-        vec[i] = random_long();
-    }
-    
-    printf_debug("sparse mat vec mul, size=%dx%d, reps=%d", rows, cols, reps);
-    double time_total = 0;
     //-------------------------------------------------------
     int i;
     timer.start();
@@ -409,18 +475,13 @@ void test_sparse_mat_vec(json &results, int rows=100, int cols=100, int n=10, in
     timer.stop();
     //-------------------------------------------------------
     
-    
-    // std::cout << "\n" << mat << "\n\n * \n\n";
-    // for (auto i = vec.begin(); i != vec.end(); ++i) std::cout << *i << ' ';
-    // std::cout << "\n\n = \n\n";
-    // 
-    // for (auto i = result.begin(); i != result.end(); ++i)
-    //     std::cout << *i << ' ';
-    // std::cout << "\n\n";
-    
     results["duration"] = timer.duration.count() * NANO;
-    results["size"]     = cols;
+    results["ops"]      = rows * per_line * cols;
+    results["rows"]     = rows;
+    results["cols"]     = cols;
     results["reps"]     = reps;
+    results["band"]     = band;
+    results["per_line"] = per_line;
 }
 
 
@@ -439,47 +500,15 @@ void test_sparse_mat_vec(json &results, int rows=100, int cols=100, int n=10, in
  *      size:     <total number of operations>
  *    }
  */
-void test_sparse_mat_mat(json &results, int rows=100, int cols=100, int n=10, int reps=512) {
-    SparseMatrix<int> A(rows, cols);
-    SparseMatrix<int> B(cols, rows);
+void test_sparse_mat_mat(json &results, int rows=100, int cols=100, int per_line=10, int band=10, int reps=512) {
+    printf_debug("generating matrices, size=%dx%d, per_line=%d, band=%d         ",
+        rows, cols, per_line, band);
+    SparseMatrix<int> A = generate_random_sparse_matrix(rows, cols, per_line, band);
+    SparseMatrix<int> B = generate_random_sparse_matrix(cols, rows, per_line, band);
     Timer timer;
     
-    printf_debug("generating matrices, size=%dx%d, reps=%d", rows, cols, reps);
-    
-    // initialize matrix values
-    int x, y;
-    for (size_t i = 0; i < n; i++) {
-        int val = 0;
-        do {
-            x = random_range(1, rows);
-            y = random_range(1, cols);
-            val = A.get(x, y);
-        } while(val != 0);
-        
-        A.set(
-            random_range(),      // random value
-            x,                  // random x coordinate (indexing from 1)
-            y                   // random y coordinate (indexing from 1)
-        );
-    }
-    
-    // initialize matrix values
-    for (size_t i = 0; i < n; i++) {
-        int val = 0;
-        do {
-            x = random_range(1, cols);
-            y = random_range(1, rows);
-            val = B.get(x, y);
-        } while(val != 0);
-        
-        B.set(
-            random_range(),      // random value
-            x,                  // random x coordinate (indexing from 1)
-            y                   // random y coordinate (indexing from 1)
-        );
-    }
-    
-    printf_debug("sparse mat mat mul, size=%dx%d, reps=%d", rows, cols, reps);
+    printf_debug("sparse mat mat mul, size=%dx%d, per_line=%d, band=%d          ",
+        rows, cols, per_line, band);
     double time_total = 0;
     
     
@@ -489,26 +518,18 @@ void test_sparse_mat_mat(json &results, int rows=100, int cols=100, int n=10, in
     timer.start();
     for (i = 0; i < reps; i++) {
         SparseMatrix<int> C = A * B;
-        // std::cout << A;;
-        // std::cout << "\n\n*\n\n";
-        // std::cout << B;
-        // std::cout << "\n\n=\n\n";
-        // std::cout << C;
     }
     timer.stop();
     //-------------------------------------------------------
     
     
-    // for (auto i = vec.begin(); i != vec.end(); ++i) std::cout << *i << ' ';
-    // std::cout << "\n\n = \n\n";
-    // 
-    // for (auto i = result.begin(); i != result.end(); ++i)
-    //     std::cout << *i << ' ';
-    // std::cout << "\n\n";
-    
     results["duration"] = timer.duration.count() * NANO;
-    results["size"]     = cols;
+    results["ops"]      = rows * per_line * cols;
+    results["rows"]     = rows;
+    results["cols"]     = cols;
     results["reps"]     = reps;
+    results["band"]     = band;
+    results["per_line"] = per_line;
 }
     
 
@@ -526,7 +547,7 @@ int main(int argc,  char* argv[]) {
     
     printf_debug("running tests...         ");
     json results;
-    results["version"] = "1.0.1";
+    results["version"] = "1.0.2";
     
     
     Timer test_timer;
@@ -578,16 +599,16 @@ int main(int argc,  char* argv[]) {
     mat_mul(results["mmn_s3"], 128, 4*8*8);
     mat_mul(results["mmn_s4"], 512, 4);
     
-    
-    test_sparse_mat_mat(results["mms_s1"],        8,        8,         8*2, 64*64*64);
-    test_sparse_mat_mat(results["mms_s2"],       32,       32,        32*2, 64*64);
-    test_sparse_mat_mat(results["mms_s3"],      128,      128,       128*2, 64);
-    test_sparse_mat_mat(results["mms_s4"],      512,      512,       512*2, 1);
-    
-    test_sparse_mat_vec(results["mvs_s1"],        8,        8,         8*2, 100*64*64*4*4);
-    test_sparse_mat_vec(results["mvs_s2"],       32,       32,        32*2, 100*64*64*4);
-    test_sparse_mat_vec(results["mvs_s3"],      128,      128,       128*2, 100*64*64);
-    test_sparse_mat_vec(results["mvs_s4"],     8192,      8192,     8192*2, 100*64);
+    //                                     rows     cols    per_line    band    reps
+    test_sparse_mat_vec(results["mvs_s1"], 32,      64,     20,         50,     1000*32);
+    test_sparse_mat_vec(results["mvs_s2"], 128,     1024,   20,         50,     1000*16);
+    test_sparse_mat_vec(results["mvs_s3"], 1024,    8192,   20,         50,     1000*4);
+    test_sparse_mat_vec(results["mvs_s4"], 8192,    32768,  20,         50,     1000);
+    //                                     rows     cols    per_line    band    reps
+    test_sparse_mat_mat(results["mms_s1"], 8,       8,      2,          4,      10*8*8*8);
+    test_sparse_mat_mat(results["mms_s2"], 32,      32,     4,          8,      10*8*4);
+    test_sparse_mat_mat(results["mms_s3"], 128,     128,    10,         20,     10);
+    test_sparse_mat_mat(results["mms_s4"], 128,     512,    10,         20,     3);
     // ------------------------------------------------------------------------
     test_timer.stop();
     printf("---------------------------------\n");
