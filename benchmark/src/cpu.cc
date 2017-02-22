@@ -42,19 +42,21 @@ static unsigned long x=123456789, y=362436069, z=521288629;
  * Function will return pseudorandom value (long)
  * @return  pseudorandom value with period of 2^96-1
  */
-unsigned long random_long(void) {          //period 2^96-1
-    unsigned long t;
-    x ^= x << 16;
-    x ^= x >> 5;
-    x ^= x << 1;
-
-   t = x;
-   x = y;
-   y = z;
-   z = t ^ x ^ y;
-
-  return z;
+unsigned long random_long(void) {
+   //  unsigned long t;
+   //  x ^= x << 16;
+   //  x ^= x >> 5;
+   //  x ^= x << 1;
+   // 
+   // t = x;
+   // x = y;
+   // y = z;
+   // z = t ^ x ^ y;
+   // 
+   // return z;
+   return rand();
 }
+
 
 /**
  * Function will return random value between min and max
@@ -64,6 +66,24 @@ unsigned long random_long(void) {          //period 2^96-1
  */
 int random_range(int min=1, int max=9) {
     return min + (rand() % (int)(max - min + 1));
+}
+
+
+/**
+ * Generates vector of given lenght where evry value is unique
+ */
+vector<int> generate_random_coords(int length, int min, int max) {
+    vector<int> v(length, 0);
+    int val;
+    for (size_t i = 0; i < length; i++) {
+        do {
+            val = random_range(min, max - 1);
+        } while(std::find(v.begin(), v.end(), val) != v.end());
+        v[i] = val;
+    }
+    
+    std::sort (v.begin(), v.end());
+    return v;
 }
 
 
@@ -141,6 +161,7 @@ void printf_debug(const char * fmt, ...) {
  */
 SparseMatrix<int> generate_random_sparse_matrix(int rows, int cols, int per_line, int band) {
     SparseMatrix<int> mat(rows, cols);
+    vector<int> coords;
     int left, right;
     for (size_t i = 0; i < rows; i++) {
         int middle = ((float)i / rows) * cols;
@@ -161,22 +182,14 @@ SparseMatrix<int> generate_random_sparse_matrix(int rows, int cols, int per_line
                 right = cols;
             }
         }
-
+        
+        coords = generate_random_coords(per_line, left, right);
         for (size_t j = 0; j < per_line; j++) {
-            int val = 0;
-            do {
-                x = i + 1;
-                y = random_range(left,right - 1) + 1;
-                val = mat.get(x, y);
-            } while(val != 0);
-
             mat.set(
-                random_range(),     // random value
-                x,                  // random x coordinate (indexing from 1)
-                y                   // random y coordinate (indexing from 1)
+                random_long(),      // random value
+                i+1,                // random x coordinate (indexing from 1)
+                coords[j]+1         // random y coordinate (indexing from 1)
             );
-            // std::cout << x << ":  " << left << ", " << right << std::endl;
-            // mat.set(random_long(), i + 1, x + 1);
         }
     }
     return mat;
@@ -364,7 +377,7 @@ int* test_mem(json &results, int (&sizes)[N], int size = ARR_SIZE, int reps=32) 
         printf_debug("mem, size=%d, reps=%d, (%02d/%02d)", REP * reps, N, i+1, N);
         mod = sizes[i] - 1;
 
-        for (int j = 0; j < REP * reps; j++) {
+        for (long j = 0; j < REP * reps; j++) {
             arr[(j * OFFSET) & mod]++;
             // arr[(j * OFFSET) & mod]--;
             // sum += arr[(j * OFFSET) & mod];
@@ -543,11 +556,15 @@ void test_sparse_mat_mat(json &results, int rows=100, int cols=100, int per_line
  *                         as many times
  */
 int main(int argc,  char* argv[]) {
-    int rep_cnt = (int)(argc >= 3 ? std::stof(argv[2]) * REP : 1 * REP);
+    string json_file = argc >= 2 ? string(argv[1]) : "";
+    int test_mistake = argc >= 3 ? std::stof(argv[2]) : 1;
+    string version   = argc >= 4 ? string(argv[3]) : "1";
+    
+    srand(1234);
     
     printf_debug("running tests...         ");
     json results;
-    results["version"] = "1.0.2";
+    results["version"] = "1.1." + version;
     
     
     Timer test_timer;
@@ -558,25 +575,25 @@ int main(int argc,  char* argv[]) {
     // valgrind: LLd  miss rate  0.0%
     // valgrind: LL   miss rate  0.0%
     int sizes_l1[] = { 4, 8, 16, 32, 64, 128, 256, 512, 1 * KB, 2 * KB };
-    test_mem(results["mem_l1"], sizes_l1);
+    test_mem(results["mem_l1"], sizes_l1, ARR_SIZE, 32*2);
     // 
     // // valgrind: D1   miss rate  9.5%
     // // valgrind: LLd  miss rate  0.0%
     // // valgrind: LL   miss rate  0.0%
     int sizes_l2[] = { 4 * KB, 8 * KB, 16 * KB, 32 * KB, 64 * KB, 128 * KB };
-    test_mem(results["mem_l2"], sizes_l2);
+    test_mem(results["mem_l2"], sizes_l2, ARR_SIZE, 32*2);
     
     // valgrind: D1   miss rate 14.2%
     // valgrind: LLd  miss rate  5.7%
     // // valgrind: LL   miss rate  1.9%
     int sizes_l3[] = { 256 * KB, 512 * KB, 1 * MB, 2 * MB, 4 * MB };
-    test_mem(results["mem_l3"], sizes_l3);
+    test_mem(results["mem_l3"], sizes_l3, ARR_SIZE, 32*2);
     // 
     // // valgrind: D1   miss rate 14.2%
     // // valgrind: LLd  miss rate 14.2%
     // // valgrind: LL   miss rate  4.9%
     int sizes_ll[] = { 8 * MB, 16 * MB, 32 * MB };
-    test_mem(results["mem_ll"], sizes_ll);
+    test_mem(results["mem_ll"], sizes_ll, ARR_SIZE, 32*2);
     
     // valgrind: D1   miss rate  0.0%
     // valgrind: LLd  miss rate  0.0%
@@ -594,24 +611,25 @@ int main(int argc,  char* argv[]) {
     test_reg_md5   (results["cpu_md5"]);
     
     
-    mat_mul(results["mmn_s1"],  16, 4*8*8*8*8*8);
-    mat_mul(results["mmn_s2"],  64, 4*8*8*8);
-    mat_mul(results["mmn_s3"], 128, 4*8*8);
-    mat_mul(results["mmn_s4"], 512, 4);
+    mat_mul(results["mmn_s1"],  16, 8*8*8*8*8*8);
+    mat_mul(results["mmn_s2"],  64, 8*8*8*8);
+    mat_mul(results["mmn_s3"], 128, 8*8*8);
+    mat_mul(results["mmn_s4"], 256, 8*8);
     
-    //                                     rows     cols    per_line    band    reps
-    test_sparse_mat_vec(results["mvs_s1"], 32,      64,     20,         50,     1000*32);
-    test_sparse_mat_vec(results["mvs_s2"], 128,     1024,   20,         50,     1000*16);
-    test_sparse_mat_vec(results["mvs_s3"], 1024,    8192,   20,         50,     1000*4);
-    test_sparse_mat_vec(results["mvs_s4"], 8192,    32768,  20,         50,     1000);
-    //                                     rows     cols    per_line    band    reps
-    test_sparse_mat_mat(results["mms_s1"], 8,       8,      2,          4,      10*8*8*8);
-    test_sparse_mat_mat(results["mms_s2"], 32,      32,     4,          8,      10*8*4);
-    test_sparse_mat_mat(results["mms_s3"], 128,     128,    10,         20,     10);
-    test_sparse_mat_mat(results["mms_s4"], 128,     512,    10,         20,     3);
+    //                                     rows     cols    per_line    band            reps
+    test_sparse_mat_vec(results["mvs_s1"], 32,      64,     20,         50,             1000*32*32);
+    test_sparse_mat_vec(results["mvs_s2"], 128,     1024,   20,         50,             1000*16*16);
+    test_sparse_mat_vec(results["mvs_s3"], 1024,    8192,   50,         50,             1000*10);
+    test_sparse_mat_vec(results["mvs_s4"], 8192,    8192*4, 50,         50,             1000*2);
+    //                                     rows     cols    per_line    band            reps
+    test_sparse_mat_mat(results["mms_s1"], 8,       8,      2,          4,              1000*32*4);
+    test_sparse_mat_mat(results["mms_s2"], 32,      32,     4,          8,              100*16);
+    test_sparse_mat_mat(results["mms_s3"], 128,     128,    10,         20,             16);
+    test_sparse_mat_mat(results["mms_s4"], 256,     256,    10,         20,             3);
     // ------------------------------------------------------------------------
     test_timer.stop();
-    printf("---------------------------------\n");
+    printf("--------------------------------------------------------------------\n");
+    
     
     printf("%-30s: %1.3f\n", "time taken", test_timer.duration.count() * NANO);
     
