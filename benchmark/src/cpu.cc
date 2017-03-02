@@ -556,15 +556,20 @@ void test_sparse_mat_mat(json &results, int rows=100, int cols=100, int per_line
  *                         as many times
  */
 int main(int argc,  char* argv[]) {
-    string json_file = argc >= 2 ? string(argv[1]) : "";
-    int test_mistake = argc >= 3 ? std::stof(argv[2]) : 1;
-    string version   = argc >= 4 ? string(argv[3]) : "1";
-    
+    int i = 1;
+    string json_file        = argc >= (i+1) ? string(argv[i++]) : "result.json";
+    string version          = argc >= (i+1) ? string(argv[i++]) : "1.2.1";
+    int el_per_line_extra   = argc >= (i+1) ? std::stof(argv[i++]) : 0;
+    int line_spread_extra   = argc >= (i+1) ? std::stof(argv[i++]) : 0;
+
+    int pl = el_per_line_extra;
+    int sp = line_spread_extra;
+
     srand(1234);
     
     printf_debug("running tests...         ");
     json results;
-    results["version"] = "1.1." + version;
+    results["version"] = version;
     
     
     Timer test_timer;
@@ -619,7 +624,7 @@ int main(int argc,  char* argv[]) {
     //                                     rows     cols    per_line    band            reps
     test_sparse_mat_vec(results["mvs_s1"], 32,      64,     20,         50,             1000*32*32);
     test_sparse_mat_vec(results["mvs_s2"], 128,     1024,   20,         50,             1000*16*16);
-    test_sparse_mat_vec(results["mvs_s3"], 1024,    8192,   50,         50,             1000*10);
+    test_sparse_mat_vec(results["mvs_s3"], 1024,    8192,   50+pl,      50+sp,          1000*10);
     test_sparse_mat_vec(results["mvs_s4"], 8192,    8192*4, 50,         50,             1000*2);
     //                                     rows     cols    per_line    band            reps
     test_sparse_mat_mat(results["mms_s1"], 8,       8,      2,          4,              1000*32*4);
@@ -635,10 +640,11 @@ int main(int argc,  char* argv[]) {
     
     printf_debug("generating output...    \n");
     cout << results.dump(true) << endl;
+    cout << json_file << endl;
 
     // if arg is set we redirect dump to file
-    if (argc >= 2) {
-        ofstream ofs (argv[1]);
+    if (!json_file.empty()) {
+        ofstream ofs (json_file);
         ofs << results.dump(true) << endl;
     }
     

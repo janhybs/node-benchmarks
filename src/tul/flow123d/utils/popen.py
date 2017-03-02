@@ -15,13 +15,13 @@ def create(command, *args, **kwargs):
         result = command
 
     if args:
-        result.extend(args)
+        result.extend([str(a) for a in args])
 
     return result
 
 
 def run_command(command, *args, **kwargs):
-    print('[ RUN ]', ' '.join(command))
+    print('[ RUN ]', ' '.join([str(c) for c in command]))
     print('[ CWD ]', kwargs.get('cwd', '.'))
 
     try:

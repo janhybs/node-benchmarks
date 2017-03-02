@@ -16,10 +16,21 @@ sys.path.append(os.path.join(__root__, 'dist-packages'))
 # change language
 os.environ['LC_ALL'] = 'C'
 
-import tul.flow123d.benchmark as benchmark
+from tul.flow123d.benchmark import install_requirements, Benchmark, BenchmarkConfig as bc
 
 # call benchmark methods
-benchmark.install_requirements()
-benchmark.make_all()
-json_file = benchmark.run_tests()
-benchmark.save_to_db(json_file)
+install_requirements()
+
+
+configs = [
+    bc(version='1.2.1', per_line=0, spread=0, repeat=50, tag='baseline')
+]
+
+
+with Benchmark(configs) as b:
+    b.compile()
+    b.run_tests()
+
+# benchmark.make_all()
+# json_file = benchmark.run_tests()
+# benchmark.save_to_db(json_file)
