@@ -1,0 +1,103 @@
+# ------------------------------
+# ----------- list of benchmarks
+# ------------------------------
+
+
+# baseline
+- version:  1.2.1
+  per_line: 0
+  spread:   0
+  repeat:   50
+  tag:      baseline
+
+- version:  1.2.{range(2,6)}
+  per_line: 0
+  spread:   0
+  repeat:   25
+  tag:      baseline
+
+
+
+# cpu increase +1
+- version:  1.2.6
+  per_line: 1
+  spread:   0
+  repeat:   25
+  tag:      p1-m0
+
+# cpu increase +2
+- version:  1.2.7
+  per_line: 2
+  spread:   0
+  repeat:   25
+  tag:      p2-m0
+
+# cpu increase +3
+- version:  1.2.8
+  per_line: 3
+  spread:   0
+  repeat:   25
+  tag:      p3-m0
+
+# cpu increase +4
+- version:  1.2.9
+  per_line: 4
+  spread:   0
+  repeat:   25
+  tag:      p4-m0
+
+# cpu increase +5
+- version:  1.2.10
+  per_line: 5
+  spread:   0
+  repeat:   25
+  tag:      p5-m0
+
+# cpu increase +8
+- version:  1.2.11
+  per_line: 8
+  spread:   0
+  repeat:   25
+  tag:      p8-m0
+
+# cpu increase +12
+- version:  1.2.12
+  per_line: 12
+  spread:   0
+  repeat:   25
+  tag:      p12-m0
+
+# cpu increase +12, memory increase +50
+- version:  1.2.13
+  per_line: 12
+  spread:   50
+  repeat:   25
+  tag:      p12-m50
+
+# cpu increase +8, memory increase +100
+- version:  1.2.14
+  per_line: 8
+  spread:   100
+  repeat:   25
+  tag:      p8-m100
+
+# cpu increase +4, memory increase +300
+- version:  1.2.15
+  per_line: 4
+  spread:   300
+  repeat:   25
+  tag:      p4-m300
+
+# memory increase +1000
+- version:  1.2.16
+  per_line: 0
+  spread:   1000
+  repeat:   25
+  tag:      p0-m1000
+
+# memory increase +2000
+- version:  1.2.17
+  per_line: 0
+  spread:   2000
+  repeat:   25
+  tag:      p0-m2000

@@ -581,46 +581,46 @@ int main(int argc,  char* argv[]) {
     // valgrind: LL   miss rate  0.0%
     int sizes_l1[] = { 4, 8, 16, 32, 64, 128, 256, 512, 1 * KB, 2 * KB };
     test_mem(results["mem_l1"], sizes_l1, ARR_SIZE, 32*2);
-    // 
+    //
     // // valgrind: D1   miss rate  9.5%
     // // valgrind: LLd  miss rate  0.0%
     // // valgrind: LL   miss rate  0.0%
     int sizes_l2[] = { 4 * KB, 8 * KB, 16 * KB, 32 * KB, 64 * KB, 128 * KB };
     test_mem(results["mem_l2"], sizes_l2, ARR_SIZE, 32*2);
-    
+
     // valgrind: D1   miss rate 14.2%
     // valgrind: LLd  miss rate  5.7%
     // // valgrind: LL   miss rate  1.9%
     int sizes_l3[] = { 256 * KB, 512 * KB, 1 * MB, 2 * MB, 4 * MB };
     test_mem(results["mem_l3"], sizes_l3, ARR_SIZE, 32*2);
-    // 
+    //
     // // valgrind: D1   miss rate 14.2%
     // // valgrind: LLd  miss rate 14.2%
     // // valgrind: LL   miss rate  4.9%
     int sizes_ll[] = { 8 * MB, 16 * MB, 32 * MB };
     test_mem(results["mem_ll"], sizes_ll, ARR_SIZE, 32*2);
-    
+
     // valgrind: D1   miss rate  0.0%
     // valgrind: LLd  miss rate  0.0%
     // valgrind: LL   miss rate  0.0%
     test_reg_simple(results["cpu_simple"]);
-    
+
     // valgrind: D1   miss rate  0.0%
     // valgrind: LLd  miss rate  0.0%
     // valgrind: LL   miss rate  0.0%
     test_reg_hash  (results["cpu_hash"]);
-    
+
     // valgrind: D1   miss rate  0.0%
     // valgrind: LLd  miss rate  0.0%
     // valgrind: LL   miss rate  0.0%
     test_reg_md5   (results["cpu_md5"]);
-    
-    
+
+
     mat_mul(results["mmn_s1"],  16, 8*8*8*8*8*8);
     mat_mul(results["mmn_s2"],  64, 8*8*8*8);
     mat_mul(results["mmn_s3"], 128, 8*8*8);
     mat_mul(results["mmn_s4"], 256, 8*8);
-    
+
     //                                     rows     cols    per_line    band            reps
     test_sparse_mat_vec(results["mvs_s1"], 32,      64,     20,         50,             1000*32*32);
     test_sparse_mat_vec(results["mvs_s2"], 128,     1024,   20,         50,             1000*16*16);

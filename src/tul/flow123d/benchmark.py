@@ -21,7 +21,9 @@ __root__ = os.path.abspath(os.path.join(__dir__, '../../../'))
 
 def install_requirements():
     # install libs and then move on
-    install_requirements_libs(os.path.join(__root__, 'libs'))
+    libs_path = os.path.abspath(os.path.join(__root__, 'libs'))
+    sys.path.append(libs_path)
+    install_requirements_libs(libs_path)
 
 
 # declare variables
@@ -33,7 +35,7 @@ now = int(time.time())
 
 
 class BenchmarkConfig(object):
-    def __init__(self, version='1.2.1', per_line=0, spread=0, repeat=1, **kwargs):
+    def __init__(self, version='1.2.1', per_line=0, spread=0, repeat=50, **kwargs):
         self.spread = spread
         self.per_line = per_line
         self.version = version
@@ -46,10 +48,13 @@ class Benchmark(object):
     :type configs : list[BenchmarkConfig]
     """
     def __init__(self, configs=None, random_copy=True):
+        from tul.flow123d.db.mongo import Mongo
         self.configs = configs or [BenchmarkConfig()]
         self.benchmark = benchmark
         self.random_dir = False
         self.json_file = None
+        self.mongo = Mongo()
+
         if random_copy:
             self.random_dir = 'copy-' + str(uuid.uuid4())
             self.benchmark = os.path.join(benchmark, self.random_dir)
@@ -65,9 +70,10 @@ class Benchmark(object):
             for repeat in range(config.repeat):
                 print('{:02d} of {:02d}'.format(repeat+1, config.repeat))
                 with Timer("Step 'run tests' {c.version} ({c.per_line}, {c.spread})".format(c=config)):
-                    json_name = '{now}_{hostname}_{username}.json'.format(now=now, hostname=hostname, username=username)
+                    json_name = '{now}_{hostname}_{username}_{repeat}.json'.format(now=now, hostname=hostname, username=username, repeat=repeat)
                     json_file = os.path.join(self.benchmark, json_name)
                     command = create('./O3.out', json_name, config.version, config.per_line, config.spread)
+                    print(command)
                     run_command(command, cwd=self.benchmark)
                     self.json_file = json_file
 
@@ -75,7 +81,6 @@ class Benchmark(object):
                         self.save_to_db(self.json_file, **config.tag)
 
     def save_to_db(self, json_file=None, **kwargs):
-        from tul.flow123d.db.mongo import Mongo
         json_file = json_file or self.json_file
 
         # save to db
@@ -89,8 +94,7 @@ class Benchmark(object):
                 data.update(kwargs)
 
                 # insert to db
-                mongo = Mongo()
-                mongo.bench.insert_one(data)
+                self.mongo.bench.insert_one(data)
 
     def __enter__(self):
         if self.random_dir:

@@ -5,6 +5,7 @@
 import sys
 import os
 
+
 # declare common paths
 __dir__ = os.path.join(os.path.dirname(__file__))
 __root__ = os.path.abspath(os.path.join(__dir__, '../'))
@@ -21,12 +22,15 @@ from tul.flow123d.benchmark import install_requirements, Benchmark, BenchmarkCon
 # call benchmark methods
 install_requirements()
 
+# values from program arguments
+version, tag, repeat, per_line, spread = sys.argv[1:]
 
+# create one simple config
 configs = [
-    bc(version='1.2.1', per_line=0, spread=0, repeat=50, tag='baseline')
+    bc(version=version, per_line=int(per_line), spread=int(spread), repeat=int(repeat), tag=tag)
 ]
 
-
+# run benchmark in separated space
 with Benchmark(configs) as b:
     b.compile()
     b.run_tests()
